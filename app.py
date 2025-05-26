@@ -4,27 +4,36 @@ import gradio as gr
 import numpy as np
 import tensorflow as tf
 
-# Load the model (choose one of the models you want to test)
-model = tf.keras.models.load_model("best_model (2).h5")  # Example: switch between .keras or .h5
+# Map dropdown labels to actual filenames
+MODEL_PATHS = {
+    "Simple RNN": "model_SimpleRNN (1).keras",
+    "GRU": "model_GRU (1).keras",
+    "Best Model (H5)": "best_model (1).h5"
+}
+
+# Load models once to avoid reload delays
+LOADED_MODELS = {name: tf.keras.models.load_model(path) for name, path in MODEL_PATHS.items()}
 
 # Define prediction function
-def predict_rnn(input_text):
+def predict_rnn(input_text, model_choice):
     try:
-        # Convert comma-separated string to array
+        model = LOADED_MODELS[model_choice]
         arr = np.array([float(x) for x in input_text.split(",")]).reshape(1, -1, 1)
         pred = model.predict(arr)
         return str(pred)
     except Exception as e:
         return f"Error: {e}"
 
-# Define Gradio interface
+# Gradio interface
 iface = gr.Interface(
     fn=predict_rnn,
-    inputs=gr.Textbox(lines=2, placeholder="Enter values like 0.1, 0.2, 0.3"),
+    inputs=[
+        gr.Textbox(lines=2, placeholder="Enter values like 0.1, 0.2, 0.3"),
+        gr.Dropdown(choices=list(MODEL_PATHS.keys()), label="Select Model", value="Simple RNN")
+    ],
     outputs="text",
-    title="Live RNN Model Predictor",
-    description="Input a comma-separated sequence of floats."
+    title="Live RNN Model Ensemble Tester",
+    description="Input a comma-separated sequence of floats and select a model to test predictions."
 )
 
-# Launch interface
 iface.launch()
